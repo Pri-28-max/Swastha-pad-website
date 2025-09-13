@@ -1,0 +1,313 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Swastha Pad — Har Mahine Ki Saheli</title>
+  <style>
+    :root{
+      --pink:#ffe6ee;
+      --accent:#ff8db1;
+      --text:#333;
+      --card:#fff;
+      --muted:#666;
+    }
+    *{box-sizing:border-box;font-family:Inter,Segoe UI,Helvetica,Arial,sans-serif}
+    body{margin:0;background:linear-gradient(180deg,var(--pink),#fff);color:var(--text)}
+    .container{max-width:900px;margin:24px auto;padding:18px}
+    header{background:var(--card);border-radius:16px;padding:20px;box-shadow:0 6px 18px rgba(0,0,0,0.06);display:flex;gap:16px;align-items:center}
+    .logo{width:72px;height:72px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#ffd0e6);display:flex;align-items:center;justify-content:center;font-weight:700;color:white;font-size:22px}
+    h1{margin:0;font-size:22px}
+    p.tag{margin:2px 0 0;color:var(--muted)}
+    .card{background:var(--card);border-radius:12px;padding:18px;margin-top:18px;box-shadow:0 6px 18px rgba(0,0,0,0.04)}
+    .center{text-align:center}
+    .lang-buttons{display:flex;gap:8px;justify-content:center;margin-top:12px}
+    button.btn{background:var(--accent);border:none;color:white;padding:10px 14px;border-radius:10px;cursor:pointer}
+    button.ghost{background:transparent;border:2px solid var(--accent);color:var(--accent)}
+    form .row{display:flex;gap:12px;margin-top:12px}
+    input[type="text"],input[type="email"],select,textarea{flex:1;padding:10px;border-radius:8px;border:1px solid #eee}
+    label{display:block;margin-top:12px;font-weight:600}
+    .symptoms{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:12px}
+    .symptom{background:#fff;padding:10px;border-radius:8px;border:1px solid #f2e6ee;display:flex;align-items:center;gap:8px}
+    .summary{background:#fff;padding:12px;border-radius:8px;margin-top:12px;border-left:4px solid var(--accent)}
+    .final-suggestions{white-space:pre-wrap;font-family:inherit}
+    footer{margin-top:18px;text-align:center;color:var(--muted);font-size:14px}
+    .small{font-size:13px;color:var(--muted)}
+    .flex{display:flex;gap:8px;align-items:center}
+    .qr-area{text-align:center;margin-top:12px}
+    .hidden{display:none}
+    @media(max-width:520px){header{flex-direction:column;align-items:flex-start}}
+  </style>
+</head>
+<body>
+  <div class="container" id="app">
+    <header>
+      <div class="logo">SP</div>
+      <div>
+        <h1 id="bizName">Swastha Pad</h1>
+        <p class="tag" id="tagline">Har mahine ki saheli</p>
+      </div>
+    </header>
+
+    <div class="card" id="welcomeCard">
+      <div class="center">
+        <h2 id="welcomeTitle">Welcome</h2>
+        <p id="welcomeDesc">Scan the QR and start — choose your language to continue.</p>
+        <div class="lang-buttons" role="tablist" aria-label="language selection">
+          <button class="btn" onclick="setLang('en')" id="lang-en">English</button>
+          <button class="btn" onclick="setLang('hi')" id="lang-hi">हिन्दी</button>
+          <button class="btn" onclick="setLang('mr')" id="lang-mr">मराठी</button>
+        </div>
+        <p class="small" id="langNote">Content will switch to chosen language.</p>
+      </div>
+    </div>
+
+    <form id="mainForm" class="card" onsubmit="handleSubmit(event)">
+      <label id="labelName">Name</label>
+      <input type="text" id="name" placeholder="Your name" required />
+
+      <label id="labelEmail">Email</label>
+      <input type="email" id="email" placeholder="you@example.com" required />
+
+      <label id="labelSymptoms">Select issues you're facing</label>
+      <div class="symptoms" id="symptomList">
+        <!-- symptom checkboxes inserted by JS -->
+      </div>
+
+      <label id="labelDuration">How long have you had these symptoms?</label>
+      <div class="row">
+        <select id="duration">
+          <option value="1">1 day</option>
+          <option value="2">2 days</option>
+          <option value="3">3-7 days</option>
+          <option value="30">More than a week</option>
+          <option value="90">More than a month</option>
+        </select>
+        <button type="button" class="btn" onclick="previewSummary()">Preview Summary</button>
+      </div>
+
+      <div id="summaryBox" class="summary hidden">
+        <strong id="summaryTitle">Summary</strong>
+        <div id="summaryText"></div>
+        <div style="margin-top:8px" class="flex">
+          <button type="button" class="btn" onclick="applySuggestions()">Go to Final Section</button>
+          <button type="button" class="ghost" onclick="editForm()">Edit</button>
+        </div>
+      </div>
+
+      <div id="finalBox" class="hidden">
+        <h3 id="finalTitle">Suggestions & Remedies</h3>
+        <div id="finalContent" class="final-suggestions"></div>
+      </div>
+
+      <div style="margin-top:12px" class="flex">
+        <button type="submit" class="btn">Save & Generate Report</button>
+        <button type="button" class="ghost" onclick="resetAll()">Reset</button>
+      </div>
+    </form>
+
+    <div class="card qr-area">
+      <p class="small" id="qrNote">If you wish to use a QR linking to this page, host the file and use its URL to create a QR code which users can scan with a phone camera.</p>
+      <button class="btn" onclick="showQR()">Generate Temporary QR Data URL</button>
+      <div id="qrImage" class="hidden" style="margin-top:12px"></div>
+    </div>
+
+    <footer>
+      Built for <strong>Swastha Pad</strong> — lightweight consult for period issues. <br/>
+      <span class="small">You can host the produced HTML file on GitHub Pages, Netlify or any web host. </span>
+    </footer>
+  </div>
+
+  <script>
+    // Translations
+    const strings = {
+      en:{
+        bizName: "Swastha Pad",
+        tagline: "Har mahine ki saheli",
+        welcomeTitle: "Welcome",
+        welcomeDesc: "Scan the QR and start — choose your language to continue.",
+        labelName: "Name",
+        labelEmail: "Email",
+        labelSymptoms: "Select issues you're facing",
+        labelDuration: "How long have you had these symptoms?",
+        preview: "Preview Summary",
+        finalTitle: "Suggestions & Remedies",
+        qrNote: "If you wish to use a QR linking to this page, host the file and use its URL to create a QR code which users can scan with a phone camera."
+      },
+      hi:{
+        bizName: "स्वस्थ पैड",
+        tagline: "हर महीने की सखी",
+        welcomeTitle: "स्वागत है",
+        welcomeDesc: "QR स्कैन करें और शुरू करें — आगे बढ़ने के लिए भाषा चुनें।",
+        labelName: "नाम",
+        labelEmail: "ईमेल",
+        labelSymptoms: "उन समस्याओं का चयन करें जो आप अनुभव कर रही हैं",
+        labelDuration: "आपको ये लक्षण कब से हैं?",
+        preview: "संक्षेप देखें",
+        finalTitle: "सुझाव और उपचार",
+        qrNote: "यदि आप इस पृष्ठ से जुड़ा QR उपयोग करना चाहती हैं, तो फ़ाइल होस्ट करें और उसकी URL से QR बनवाएँ।"
+      },
+      mr:{
+        bizName: "स्वस्थ पॅड",
+        tagline: "दर महिन्याची मैत्रीण",
+        welcomeTitle: "स्वागत आहे",
+        welcomeDesc: "QR स्कॅन करा आणि सुरुवात करा — पुढे जाण्यासाठी भाषा निवडा.",
+        labelName: "नाव",
+        labelEmail: "ईमेल",
+        labelSymptoms: "आपणास भेडसावणाऱ्या समस्या निवडा",
+        labelDuration: "हे लक्षणे किती दिवसांपासून आहेत?",
+        preview: "सारांश पाहा",
+        finalTitle: "सूचना आणि उपचार",
+        qrNote: "जर तुम्हाला या पृष्ठाशी जोडलेला QR हवा असेल तर फाइल होस्ट करा आणि त्याच्या URL ने QR तयार करा."
+      }
+    };
+
+    const symptomData = [
+      { id: 'cramps', key:'cramps', en:'Cramps (Dysmenorrhea)', hi:'क्रैम्प्स (दर्द)', mr:'पोटदुखी (क्रॅम्प्स)' },
+      { id: 'pcod', key:'pcod', en:'PCOD / PCOS', hi:'PCOD / PCOS', mr:'PCOD / PCOS' },
+      { id: 'heavy', key:'heavy', en:'Heavy Bleeding (Menorrhagia)', hi:'भारी रक्तस्राव', mr:'जास्त रक्तस्राव' },
+      { id: 'bloating', key:'bloating', en:'Bloating / Over Floating', hi:'फुलणे', mr:'फुगणे' },
+      { id: 'irregular', key:'irregular', en:'Irregular Periods', hi:'अनियमित पीरियड्स', mr:'अनियमित पाळी' },
+      { id: 'pms', key:'pms', en:'Premenstrual Syndrome (PMS)', hi:'पीएमएस', mr:'PMS' },
+      { id: 'mood', key:'mood', en:'Mood Swings / Stress', hi:'मूड स्विंग्स / तनाव', mr:'मनःस्थिती बदल / ताण' }
+    ];
+
+    const suggestions = {
+      pcod: `Section 3A (PCOD / PCOS)\n\n🌱 Add flax seeds, chia seeds, and leafy vegetables to diet\n🧘‍♀️ Yoga: Butterfly pose, Surya Namaskar\n🚶‍♀️ Daily 30 min walking/exercise\n❌ Avoid sugar, fried, processed foods\n👩‍⚕️ If >3 months, consult gynecologist\n\n👉 Go to Final Section`,
+      cramps: `Section 3B (Cramps / Stomach Pain – Dysmenorrhea)\n\n🍵 Ginger / chamomile tea\n♨️ Hot water bag\n🧘‍♀️ Yoga: Child’s Pose, Cat-Cow\n🥗 Eat light, avoid oily food\n😴 Proper rest\n\n👉 Go to Final Section`,
+      heavy: `Section 3C (Heavy Bleeding – Menorrhagia)\n\n🥭 Iron-rich foods (spinach, beetroot, dates)\n💧 Drink plenty of water\n🧘‍♀️ Yoga: Reclining Bound Angle Pose (Supta Baddha Konasana)\n❌ Avoid caffeine & spicy food\n👩‍⚕️ If persists >2 cycles, consult doctor\n\n👉 Go to Final Section`,
+      bloating: `Section 3D (Bloating / Over Floating)\n\n💧 Warm water\n🍵 Fennel / peppermint tea\n🚶‍♀️ Light walking aids digestion\n🥦 Fiber-rich vegetables\n❌ Reduce salt & soda drinks\n\n👉 Go to Final Section`,
+      irregular: `Section 3E (Irregular Periods)\n\n🧘‍♀️ Yoga: Kapalbhati, Anulom Vilom\n🌱 Balanced diet, avoid junk food\n🚶‍♀️ Regular sleep + exercise\n👩‍⚕️ Doctor if >6 months irregularity\n\n👉 Go to Final Section`,
+      pms: `Section 3F (Premenstrual Syndrome – PMS)\n\n🥭 Eat fruits, nuts & omega-3 rich food\n🧘‍♀️ Yoga: Cobra Pose, Bridge Pose\n🚶‍♀️ 20–30 min daily walk\n🍵 Herbal teas (ginger / cinnamon)\n❌ Avoid too much coffee\n\n👉 Go to Final Section`,
+      mood: `Section 3G (Mood Swings / Stress)\n\n🎶 Calming music\n🧘‍♀️ Meditation 10 mins\n🍫 Small piece dark chocolate\n☀️ Sunlight & outdoor walk\n💤 Good sleep routine\n\n👉 Go to Final Section`
+    };
+
+    let lang = 'en';
+
+    function setLang(l){
+      lang = l;
+      const s = strings[lang];
+      document.getElementById('bizName').innerText = s.bizName;
+      document.getElementById('tagline').innerText = s.tagline;
+      document.getElementById('welcomeTitle').innerText = s.welcomeTitle;
+      document.getElementById('welcomeDesc').innerText = s.welcomeDesc;
+      document.getElementById('labelName').innerText = s.labelName;
+      document.getElementById('labelEmail').innerText = s.labelEmail;
+      document.getElementById('labelSymptoms').innerText = s.labelSymptoms;
+      document.getElementById('labelDuration').innerText = s.labelDuration;
+      document.getElementById('summaryTitle').innerText = s.preview || 'Summary';
+      document.getElementById('finalTitle').innerText = s.finalTitle;
+      document.getElementById('qrNote').innerText = s.qrNote;
+      // update symptom labels
+      symptomData.forEach(it => {
+        const el = document.querySelector(`label[for="sym_${it.id}"]`);
+        if(el) el.innerText = it[lang] || it.en;
+      });
+    }
+
+    function createSymptoms(){
+      const container = document.getElementById('symptomList');
+      container.innerHTML = '';
+      symptomData.forEach(s=>{
+        const div = document.createElement('div');
+        div.className = 'symptom';
+        div.innerHTML = `<input type="checkbox" id="sym_${s.id}" name="symptoms" value="${s.key}" />
+                         <label for="sym_${s.id}">${s.en}</label>`;
+        container.appendChild(div);
+      });
+      setLang(lang);
+    }
+
+    function previewSummary(){
+      const name = document.getElementById('name').value.trim() || '—';
+      const email = document.getElementById('email').value.trim() || '—';
+      const duration = document.getElementById('duration').value;
+      const checked = Array.from(document.querySelectorAll('input[name="symptoms"]:checked')).map(n=>n.value);
+      if(checked.length===0){ alert({en:'Please select at least one symptom.',hi:'कृपया कम से कम एक लक्षण चुनें।',mr:'कृपया किमान एक लक्षण निवडा.'}[lang] ); return; }
+      const daysText = { '1':'1 day','2':'2 days','3':'3-7 days','30':'More than a week','90':'More than a month' }[duration];
+      let txt = `${strings[lang].labelName}: ${name}\n${strings[lang].labelEmail}: ${email}\n${strings[lang].labelDuration}: ${daysText}\n\nSelected issues:\n`;
+      checked.forEach(c=>{
+        const label = symptomData.find(s=>s.key===c)[lang] || symptomData.find(s=>s.key===c).en;
+        txt += '• ' + label + '\n';
+      });
+      document.getElementById('summaryText').innerText = txt;
+      document.getElementById('summaryBox').classList.remove('hidden');
+      window.scrollTo({top:document.getElementById('summaryBox').offsetTop-20,behavior:'smooth'});
+    }
+
+    function applySuggestions(){
+      const checked = Array.from(document.querySelectorAll('input[name="symptoms"]:checked')).map(n=>n.value);
+      let out = '';
+      if(checked.length===0){ alert({en:'Please select at least one symptom.',hi:'कृपया कम से कम एक लक्षण चुनें।',mr:'कृपया किमान एक लक्षण निवडा.'}[lang]); return; }
+      checked.forEach(c=>{
+        out += (suggestions[c] || '') + '\n\n';
+      });
+      document.getElementById('finalContent').innerText = out;
+      document.getElementById('finalBox').classList.remove('hidden');
+      document.getElementById('summaryBox').classList.add('hidden');
+      window.scrollTo({top:document.getElementById('finalBox').offsetTop-20,behavior:'smooth'});
+    }
+
+    function editForm(){
+      document.getElementById('summaryBox').classList.add('hidden');
+    }
+
+    function handleSubmit(e){
+      e.preventDefault();
+      previewSummary();
+      // mimic "save" — produce a downloadable report (text)
+      const name = document.getElementById('name').value.trim() || '—';
+      const email = document.getElementById('email').value.trim() || '—';
+      const duration = document.getElementById('duration').value;
+      const checked = Array.from(document.querySelectorAll('input[name="symptoms"]:checked')).map(n=>n.value);
+      if(checked.length===0){ alert({en:'Please select at least one symptom.',hi:'कृपया कम से कम एक लक्षण चुनें।',mr:'कृपया किमान एक लक्षण निवडा.'}[lang]); return; }
+      const daysText = { '1':'1 day','2':'2 days','3':'3-7 days','30':'More than a week','90':'More than a month' }[duration];
+      let report = `Swastha Pad — Report\nName: ${name}\nEmail: ${email}\nDuration: ${daysText}\n\nIssues:\n`;
+      checked.forEach(c=>{
+        const label = symptomData.find(s=>s.key===c)[lang] || symptomData.find(s=>s.key===c).en;
+        report += '• ' + label + '\n';
+      });
+      report += '\nSuggestions:\n';
+      checked.forEach(c=>{ report += suggestions[c] + '\n\n'; });
+      const blob = new Blob([report],{type:'text/plain;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `swasthapad_report_${(new Date()).toISOString().slice(0,10)}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      alert({en:'Report generated and downloaded.',hi:'रिपोर्ट तैयार की गई और डाउनलोड हुई।',mr:'अहवाल तयार झाला आणि डाउनलोड झाला.'}[lang]);
+    }
+
+    function resetAll(){
+      document.getElementById('mainForm').reset();
+      document.getElementById('summaryBox').classList.add('hidden');
+      document.getElementById('finalBox').classList.add('hidden');
+      setLang(lang);
+    }
+
+    function showQR(){
+      // produce a small QR via Google Chart API as an <img> tag (works if device has internet).
+      // If offline, show a data URL fallback message.
+      const url = location.href;
+      const qrUrl = `https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=${encodeURIComponent(url)}`;
+      const img = document.createElement('img');
+      img.src = qrUrl;
+      img.alt = 'QR code linking to this page';
+      img.style.maxWidth = '220px';
+      const container = document.getElementById('qrImage');
+      container.innerHTML = '';
+      container.appendChild(img);
+      container.classList.remove('hidden');
+      window.scrollTo({top:container.offsetTop-20,behavior:'smooth'});
+    }
+
+    // init
+    createSymptoms();
+    setLang('en');
+  </script>
+</body>
+</html>
